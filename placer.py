@@ -194,7 +194,7 @@ def place_text(ctx, text, href, x, y):
     
     ctx.move_to(0.5, y + .1)
     
-    href = short_url(href) + u' — ' + href
+    href = href
     
     while True:
         w = ctx.text_extents(href)[4]
