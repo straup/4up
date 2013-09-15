@@ -41,7 +41,7 @@ while not pages or page <= pages:
         'user_id':opts.user_id,
         'format':'json',
         'nojsoncallback':1,
-        'extras':'owner_name,geo,date_taken,url_m,url_n,url_z,url_c,url_l',
+        'extras':'owner_name,geo,date_taken,url_m,url_n,url_c,url_l',
         'auth_token':auth_token,
         'page':page
     }
@@ -69,15 +69,17 @@ while not pages or page <= pages:
         owner = ph['ownername']
 
         # http://farm{farm-id}.staticflickr.com/{server-id}/{id}_{secret}.jpg
-        full_img = 'http://farm%s.staticflickr.com/%s/%s_%s_b.jpg' % (ph['farm'], ph['server'], ph['id'], ph['secret'])
+        # full_img = 'http://farm%s.staticflickr.com/%s/%s_%s_b.jpg' % (ph['farm'], ph['server'], ph['id'], ph['secret'])
 
-        for url in ('url_l', 'url_c', 'url_z', 'url_m'):
+        # because _z.jpg?zz=1 WTF???
+
+        for url in ('url_l', 'url_c', 'url_m'):
 
             if ph.get(url):
                 full_img = ph[url]
                 break
 
-        # print full_img
+        print full_img
 
         """
         sz_args = {
