@@ -11,6 +11,9 @@ from os import close, remove
 from cairo import PDFSurface, ImageSurface, Context
 from PIL import Image
 
+import urllib
+import cStringIO
+
 from font import set_font_face_from_file
 from placer import place_image_top, place_image_bottom, place_image_left
 from placer import place_image_right, place_image_topleft, place_image_topright
@@ -29,7 +32,18 @@ TALL, WIDE, EQUAL = 1, 2, 3
 def load_image(image_row):
     '''
     '''
-    image = Image.open(image_row['full_img'])
+
+    try:
+        if image_row['full_img'].startswith('http'):
+            url = image_row['full_img']
+            print url
+            
+            file = cStringIO.StringIO(urllib.urlopen(url).read())
+            image = Image.open(file)
+        else:
+            image = Image.open(image_row['full_img'])
+    except Exception, e:
+        return None
 
     width, height = image.size
     aspect = float(width) / float(height)
@@ -68,22 +82,24 @@ def get_rows(input):
         #            pinterestapp:pinner, pinterestapp:repins, pinterestapp:source,
         #            twitter:card, twitter:site, twitter:url
         #
-        
-        if not row['full_img'] or not exists(join(basedir, row['full_img'])):
-            continue
+    
+        #if not row['full_img'] or not exists(join(basedir, row['full_img'])):
+        #    print "POO %s" % join(basedir, row['full_img'])
+        #    continue
         
         if row['id'] in ids:
             continue
         
         ids.add(row['id'])
     
-        row['center_img'] = join(basedir, row['center_img'])
-        row['thumb_img'] = join(basedir, row['thumb_img'])
-        row['board_img'] = join(basedir, row['board_img'])
-        row['full_img'] = join(basedir, row['full_img'])
+        # row['center_img'] = join(basedir, row['center_img'])
+        # row['thumb_img'] = join(basedir, row['thumb_img'])
+        # row['board_img'] = join(basedir, row['board_img'])
+        # row['full_img'] = join(basedir, row['full_img'])
+
         row['meta'] = loads(row['meta'])
     
-        row['original_img'] = glob(join(dirname(row['full_img']), 'original.*'))[0]
+        # row['original_img'] = glob(join(dirname(row['full_img']), 'original.*'))[0]
         
         yield row
 
@@ -186,7 +202,7 @@ def arrange_page(ctx, image_rows, page_number, index):
     ctx.set_font_size(7 * inppt)
 
     for (row, num, y) in zip(info, count(1), (1.5, 1.25, 1.0, 0.75)):
-        text = row['meta'].get('og:description', row['alt'])
+        text = row['meta'].get('og:description', '')
         href = row['meta'].get('pinterestapp:source', '')
 
         place_text(ctx, text, href, .5, sheet_height - y)
