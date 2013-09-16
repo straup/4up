@@ -254,14 +254,17 @@ def setup_doc(name):
 
 if __name__ == '__main__':
 
-    (input, ) = argv[1:]
-    input = open(input)
+    (path, ) = argv[1:]
+    input = open(path)
     books = count(1)
     
     image_rows = islice(get_rows(input), 0, 10000)
     index = []
     
-    doc, ctx = setup_doc('book%d.pdf' % books.next())
+    fname = os.path.basename(path)
+    fname = fname.replace(".csv", "")
+
+    doc, ctx = setup_doc('%s-book%d.pdf' % (fname, books.next()))
     page_numbers = count(1)
     
     while True:
