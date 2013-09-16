@@ -1,4 +1,6 @@
-﻿from glob import glob
+﻿#!/usr/bin/env python
+
+from glob import glob
 from sys import argv, stdin
 from csv import DictReader
 from json import loads
@@ -12,7 +14,10 @@ from cairo import PDFSurface, ImageSurface, Context
 from PIL import Image
 
 import urllib
-import cStringIO
+import urlparse
+import os.path
+
+import logging
 
 from font import set_font_face_from_file
 from placer import place_image_top, place_image_bottom, place_image_left
@@ -33,17 +38,7 @@ def load_image(image_row):
     '''
     '''
 
-    try:
-        if image_row['full_img'].startswith('http'):
-            url = image_row['full_img']
-            print url
-            
-            file = cStringIO.StringIO(urllib.urlopen(url).read())
-            image = Image.open(file)
-        else:
-            image = Image.open(image_row['full_img'])
-    except Exception, e:
-        return None
+    image = Image.open(image_row['full_img'])
 
     width, height = image.size
     aspect = float(width) / float(height)
@@ -83,10 +78,34 @@ def get_rows(input):
         #            twitter:card, twitter:site, twitter:url
         #
     
-        #if not row['full_img'] or not exists(join(basedir, row['full_img'])):
-        #    print "POO %s" % join(basedir, row['full_img'])
-        #    continue
-        
+        if not row['full_img']:
+            continue
+
+        if not exists(join(basedir, row['full_img'])) and row['full_img'].startswith('http'):
+
+            url = row['full_img']
+            parts = urlparse.urlparse(url)
+            
+            fname = os.path.basename(parts.path)
+            path = join(basedir, fname)
+
+            logging.info("write %s to %s" % (url, path))
+
+            try:
+                rsp = urllib.urlopen(url)
+
+                fh = open(path, 'wb')
+                fh.write(rsp.read())
+                fh.close()
+
+                row['full_img'] = fname
+
+            except Exception, e:
+                logging.error("failed to fetch/write %s because %s" % (url, e))
+
+        if not exists(join(basedir, row['full_img'])):
+            continue
+
         if row['id'] in ids:
             continue
         
@@ -95,8 +114,8 @@ def get_rows(input):
         # row['center_img'] = join(basedir, row['center_img'])
         # row['thumb_img'] = join(basedir, row['thumb_img'])
         # row['board_img'] = join(basedir, row['board_img'])
-        # row['full_img'] = join(basedir, row['full_img'])
 
+        row['full_img'] = join(basedir, row['full_img'])
         row['meta'] = loads(row['meta'])
     
         # row['original_img'] = glob(join(dirname(row['full_img']), 'original.*'))[0]
