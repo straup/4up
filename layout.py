@@ -89,19 +89,22 @@ def get_rows(input):
             fname = os.path.basename(parts.path)
             path = join(basedir, fname)
 
-            logging.info("write %s to %s" % (url, path))
+            if not exists(path):
+                logging.info("write %s to %s" % (url, path))
 
-            try:
-                rsp = urllib.urlopen(url)
+                try:
+                    rsp = urllib.urlopen(url)
 
-                fh = open(path, 'wb')
-                fh.write(rsp.read())
-                fh.close()
+                    fh = open(path, 'wb')
+                    fh.write(rsp.read())
+                    fh.close()
 
-                row['full_img'] = fname
+                except Exception, e:
+                    logging.error("failed to fetch/write %s because %s" % (url, e))
 
-            except Exception, e:
-                logging.error("failed to fetch/write %s because %s" % (url, e))
+            row['full_img'] = fname
+
+        #
 
         if not exists(join(basedir, row['full_img'])):
             continue
@@ -254,7 +257,23 @@ def setup_doc(name):
 
 if __name__ == '__main__':
 
-    (path, ) = argv[1:]
+    import optparse
+    import ConfigParser
+    
+    parser = optparse.OptionParser()
+    parser.add_option("-d", "--data", dest="data", help="The path to the CSV file containing your data")
+    # TO DO: out dir
+    parser.add_option("-v", "--verbose", dest="verbose", action="store_true", help="Be chatty while you work (default is false)")
+
+    (opts, args) = parser.parse_args()
+
+    if opts.verbose:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.INFO)
+
+    path = opts.data
+
     input = open(path)
     books = count(1)
     
@@ -281,7 +300,7 @@ if __name__ == '__main__':
         
         if page_number == 240:
             doc.finish()
-            doc, ctx = setup_doc('book%d.pdf' % books.next())
+            doc, ctx = setup_doc('%s-book%d.pdf' % (fname, books.next()))
             page_numbers = count(1)
     
     doc.finish()
