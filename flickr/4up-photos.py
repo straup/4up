@@ -26,6 +26,24 @@ auth_token=cfg.get('flickr', 'auth_token')
 
 api = Flickr.API.API(api_key, api_secret)
 
+# sudo put me in a library or something...
+# (20130930/straup)
+
+if opts.user_id == 'me':
+
+    args = {
+        'method': 'flickr.auth.checkToken',
+        'format': 'json',
+        'nojsoncallback': 1,
+        'auth_token': auth_token
+        }
+
+    req = Flickr.API.Request(**args)
+    res = api.execute_request(req)
+
+    data = json.loads(res.read())
+    opts.user_id = data['auth']['user']['nsid']
+
 pages = None
 page = 1
 
