@@ -262,7 +262,7 @@ if __name__ == '__main__':
     
     parser = optparse.OptionParser()
     parser.add_option("-d", "--data", dest="data", help="The path to the CSV file containing your data")
-    parser.add_option("-p", "--pages", dest="pages", default=240, action="store_const", help="The maximum number of pages per book")
+    parser.add_option("-p", "--pages", dest="pages", default=240, action="store", help="The maximum number of pages per book")
     parser.add_option("-v", "--verbose", dest="verbose", action="store_true", help="Be chatty while you work (default is false)")
 
     # TO DO: out dir
@@ -300,7 +300,7 @@ if __name__ == '__main__':
         else:
             doc.show_page()
         
-        if page_number == opts.pages:
+        if page_number == int(opts.pages):
             doc.finish()
             doc, ctx = setup_doc('%s-book%d.pdf' % (fname, books.next()))
             page_numbers = count(1)
