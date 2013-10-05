@@ -38,7 +38,14 @@ def load_image(image_row):
     '''
     '''
 
-    image = Image.open(image_row['full_img'])
+    try:
+        image = Image.open(image_row['full_img'])
+    except Exception, e:
+        
+        logging.error("failed to open %s because '%s'" % (image_row['full_img'], e))
+        logging.info("returning a blank image for %s" % image_row['full_img'])
+
+        image = Image.new('RGBA', (500, 375))
 
     width, height = image.size
     aspect = float(width) / float(height)
