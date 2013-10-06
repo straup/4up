@@ -1,0 +1,4 @@
+[flickr]
+api_key=YOUR_FLICKR_API_KEY
+api_secret=YOUR_FLICKR_API_SECRET
+auth_token=YOUR_FLICKR_AUTH_TOKEN
