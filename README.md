@@ -45,7 +45,7 @@ for the user identified by the Flickr auth token.
 
 ### Flickr faves for a user
 
-	$> python ./flickr/4up-photos.py -c flickr.cfg -u me -o ../data
+	$> python ./flickr/4up-faves.py -c flickr.cfg -u me -o ../data
 
 ### flickr.cfg
 
