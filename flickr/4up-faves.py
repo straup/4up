@@ -97,34 +97,7 @@ while not pages or page <= pages:
                 full_img = ph[url]
                 break
 
-        print full_img
-
-        """
-        sz_args = {
-            'method':'flickr.photos.getSizes',
-            'photo_id':ph['id'],
-            'auth_token': auth_token,
-            'format': 'json',
-            'nojsoncallback': 1
-        }
-
-        sz_req = Flickr.API.Request(**sz_args)
-        sz_res = api.execute_request(sz_req)
-
-        sz_data = json.load(sz_res)
-
-        possible = sz_data['sizes']['size']
-        possible_h = {}
-
-        for p in possible:
-            possible_h[ p['label'] ] = p
-
-        for label in ('Large', 'Medium 800', 'Medium 640', 'Medium'):
-            if possible_h.get(label, False):
-                full_img = possible_h[label]['source']
-                print full_img
-                break
-        """
+        logging.debug("fetch %s" % full_img)
 
         photo_page = "http://www.flickr.com/photos/%s/%s" % (ph['owner'], ph['id'])
 
