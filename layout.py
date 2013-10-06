@@ -51,10 +51,22 @@ def load_image(image_row):
     aspect = float(width) / float(height)
 
     handle, png_path = mkstemp(dir='.', suffix='.png')
-    # image.thumbnail((64, 64), Image.ANTIALIAS)
     image.save(png_path)
 
-    image = ImageSurface.create_from_png(png_path)
+    try:
+        image = ImageSurface.create_from_png(png_path)
+    except Exception, e:
+        logging.error("failed to create image surface for %s because '%s'" % (image_row['full_img'], e))
+
+        image = Image.new('RGBA', (500, 375))
+
+        width, height = image.size
+        aspect = float(width) / float(height)
+
+        handle, png_path = mkstemp(dir='.', suffix='.png')
+        image.save(png_path)
+        
+        image = ImageSurface.create_from_png(png_path)
 
     remove(png_path)
     close(handle)
