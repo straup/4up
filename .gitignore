@@ -1,5 +1,4 @@
 *.pdf
 *~
 *.pyc
-data/*
 *.cfg
