@@ -64,7 +64,7 @@ chooses for arranging photos on a page.
 
 ## Caveats
 
-* You will need to have both Cario and its corresponding Python bindings
+* You will need to have both Cairo and its corresponding Python bindings
 installed. This is sometimes harder than it sounds. See below inre: a setup.py
 script.
 
