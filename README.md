@@ -78,3 +78,11 @@ script.
   update everything else accordingly
 
 * Add the ability to pass multiple CSV files at once. Yak shaving ?
+
+## Credits
+
+* [Michal Migurski](https://github.com/migurski/)
+
+### Contributors
+
+* [Aaron Straup Cope](https://github.com/straup/)
