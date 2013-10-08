@@ -72,12 +72,12 @@ script.
 
 * A proper `setup.py` script
 
-* Update the Flickr stuff to work with new-skool OAuth API token nonsense.
-
 * Identify and document that minimum properties required to generate a book and
   update everything else accordingly
 
 * Add the ability to pass multiple CSV files at once. Yak shaving ?
+
+* Figure out paths and library loading for libfreetype stuff under OS X
 
 ## Credits
 
