@@ -2,134 +2,119 @@
 
 import sys
 import datetime
+import logging
 import json
 import csv
 import os.path
 
 import optparse
 import ConfigParser
-import Flickr.API
-    
-parser = optparse.OptionParser()
-parser.add_option("-c", "--config", dest="config", help="path to an ini config file")
-parser.add_option("-u", "--user-id", dest="user_id", help="the user to fetch photos for")
-parser.add_option("-o", "--outdir", dest="outdir", help="where to write data files")
+import flickrapi
 
-(opts, args) = parser.parse_args()
+if __name__ == '__main__' :
 
-cfg = ConfigParser.ConfigParser()
-cfg.read(opts.config)
+    parser = optparse.OptionParser()
+    parser.add_option("-c", "--config", dest="config", help="path to an ini config file")
+    parser.add_option("-u", "--user-id", dest="user_id", help="the user to fetch photos for")
+    parser.add_option("-o", "--outdir", dest="outdir", help="where to write data files")
 
-api_key=cfg.get('flickr', 'api_key')
-api_secret=cfg.get('flickr', 'api_secret')
-auth_token=cfg.get('flickr', 'auth_token')
+    (opts, args) = parser.parse_args()
 
-api = Flickr.API.API(api_key, api_secret)
+    cfg = ConfigParser.ConfigParser()
+    cfg.read(opts.config)
 
-# sudo put me in a library or something...
-# (20130930/straup)
+    api_key=cfg.get('flickr', 'api_key')
+    api_secret=cfg.get('flickr', 'api_secret')
 
-if opts.user_id == 'me':
+    flickr = flickrapi.FlickrAPI(api_key, api_secret)
+    (token, frob) = flickr.get_token_part_one(perms='read')
+    if not token: raw_input("Press ENTER after you authorized this program")
+    flickr.get_token_part_two((token, frob))
 
-    args = {
-        'method': 'flickr.auth.checkToken',
-        'format': 'json',
-        'nojsoncallback': 1,
-        'auth_token': auth_token
-        }
+    # sudo put me in a library or something...
+    # (20130930/straup)
 
-    req = Flickr.API.Request(**args)
-    res = api.execute_request(req)
+    if opts.user_id == 'me':
+        data = flickr.auth_checkToken()
+        opts.user_id = data.find('auth').find('user').attrib['nsid']
 
-    data = json.loads(res.read())
-    opts.user_id = data['auth']['user']['nsid']
+    pages = None
+    page = 1
 
-pages = None
-page = 1
+    current_year = None
+    writer = None
 
-current_year = None
-writer = None
+    while not pages or page <= int(pages):
 
-while not pages or page <= pages:
+        print "page %s (%s)" % (page, pages)
 
-    print "page %s (%s)" % (page, pages)
+        data = flickr.favorites_getList(
+            user_id=opts.user_id,
+            extras='owner_name,geo,date_taken,url_m,url_n,url_c,url_l',
+            page=page
+            )
 
-    args = {
-        'method':'flickr.favorites.getList',
-        'user_id':opts.user_id,
-        'format':'json',
-        'nojsoncallback':1,
-        'extras':'owner_name,geo,date_taken,url_m,url_n,url_c,url_l',
-        'auth_token':auth_token,
-        'page':page
-    }
+        if not pages:
+            pages = data.find('photos').attrib['pages']
 
-    req = Flickr.API.Request(**args)
-    res = api.execute_request(req)
+        for ph in data.find('photos'):#['photo']:
+            
+            df = float(ph.attrib['date_faved'])
+            df = datetime.date.fromtimestamp(df)
 
-    data = json.loads(res.read())
+            year_faved = df.year
 
-    if not pages:
-        pages = data['photos']['pages']
+            dt = ph.attrib['datetaken']
+            dt = dt.split('-')
+            year_taken = dt[0]
 
-    for ph in data['photos']['photo']:
+            title = ph.attrib['title']
+            owner = ph.attrib['ownername']
 
-        df = float(ph['date_faved'])
-        df = datetime.date.fromtimestamp(df)
+            # http://farm{farm-id}.staticflickr.com/{server-id}/{id}_{secret}.jpg
+            # full_img = 'http://farm%s.staticflickr.com/%s/%s_%s_b.jpg' % (ph['farm'], ph['server'], ph['id'], ph['secret'])
+
+            # because _z.jpg?zz=1 WTF???
+
+            for url in ('url_l', 'url_c', 'url_m'):
+
+                if ph.get(url):
+                    full_img = ph.attrib[url]
+                    break
+
+            logging.debug("fetch %s" % full_img)
+
+            photo_page = "http://www.flickr.com/photos/%s/%s" % (ph.attrib['owner'], ph.attrib['id'])
+
+            desc = ""
         
-        year_faved = df.year
+            if title != '':
+                desc = "%s, by %s (%s)" % (title, owner, year_taken)
+            else:
+                desc = "Untitled, by %s (%s)" % (owner, year_taken)
 
-        dt = ph['datetaken']
-        dt = dt.split('-')
-        year_taken = dt[0]
+            meta = json.dumps({
+                'og:description': desc,
+                'pinterestapp:source': photo_page,
+            })
 
-        title = ph['title']
-        owner = ph['ownername']
+            row = {
+                'full_img': full_img,
+                'id': ph.attrib['id'],
+                'meta': meta,
+            }
 
-        # http://farm{farm-id}.staticflickr.com/{server-id}/{id}_{secret}.jpg
-        # full_img = 'http://farm%s.staticflickr.com/%s/%s_%s_b.jpg' % (ph['farm'], ph['server'], ph['id'], ph['secret'])
+            if not current_year or year_faved != current_year:
 
-        # because _z.jpg?zz=1 WTF???
+                current_year = year_faved
+                fname = "flickr-faves-%s.csv" % current_year
 
-        for url in ('url_l', 'url_c', 'url_m'):
+                path = os.path.join(opts.outdir, fname)
+                fh = open(path, 'w')
 
-            if ph.get(url):
-                full_img = ph[url]
-                break
+                writer = csv.DictWriter(fh, fieldnames=('full_img', 'id', 'meta'))
+                writer.writeheader()
 
-        logging.debug("fetch %s" % full_img)
+            writer.writerow(row)
 
-        photo_page = "http://www.flickr.com/photos/%s/%s" % (ph['owner'], ph['id'])
-
-        desc = ""
-        
-        if title != '':
-            desc = "%s, by %s (%s)" % (title, owner, year_taken)
-        else:
-            desc = "Untitled, by %s (%s)" % (owner, year_taken)    
-
-        meta = json.dumps({
-            'og:description': desc,
-            'pinterestapp:source': photo_page,
-        })
-
-        row = {
-            'full_img': full_img,
-            'id': ph['id'],
-            'meta': meta,
-        }
-
-        if not current_year or year_faved != current_year:
-
-            current_year = year_faved
-            fname = "flickr-faves-%s.csv" % current_year
-
-            path = os.path.join(opts.outdir, fname)
-            fh = open(path, 'w')
-
-            writer = csv.DictWriter(fh, fieldnames=('full_img', 'id', 'meta'))
-            writer.writeheader()
-
-        writer.writerow(row)
-
-    page += 1
+        page += 1
