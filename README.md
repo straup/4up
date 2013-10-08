@@ -86,3 +86,5 @@ script.
 ### Contributors
 
 * [Aaron Straup Cope](https://github.com/straup/)
+
+* [hugovk](https://github.com/hugovk/)
